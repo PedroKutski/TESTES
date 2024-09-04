@@ -4,27 +4,23 @@
 #include <HTTPClient.h>
 #include <Update.h>
 
-// Configurações do WiFi
 const char* ssid = "INTELBRAS - JOAO";
 const char* password = "jps510123";
-
-// Configurações do MQTT
 const char* mqtt_server = "18dd6a02029d4d7781deed1e012e3fc2.s1.eu.hivemq.cloud";
 const char* mqtt_username = "pedroteste";
 const char* mqtt_password = "Pedro510123.";
 const int mqtt_port = 8883;
+const char* firmware_base_url = "https://raw.githubusercontent.com/PedroKutski/TESTES/main/";
+const int ledPin = 2;
 
 WiFiClientSecure espClient;
 PubSubClient mqttClient(espClient);
 
-const char* firmware_base_url = "https://raw.githubusercontent.com/PedroKutski/TESTES/main/";
-
-const int ledPin = 2;  // Pin do LED
-
 void setup() {
   Serial.begin(9600);
-  pinMode(ledPin, OUTPUT);  // Configura o pin do LED como saída
-  connectToWiFi();
+  pinMode(ledPin, OUTPUT);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) delay(500);
   espClient.setInsecure();
   mqttClient.setServer(mqtt_server, mqtt_port);
   mqttClient.setCallback(mqttCallback);
@@ -35,41 +31,24 @@ void loop() {
   mqttClient.loop();
 }
 
-// Conecta ao WiFi
-void connectToWiFi() {
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("Conectado ao WiFi");
-}
-
-// Reconnecta ao broker MQTT se necessário
 void reconnectToMQTT() {
   while (!mqttClient.connected()) {
     if (mqttClient.connect("ESP32Client", mqtt_username, mqtt_password)) {
-      Serial.println("Conectado ao broker MQTT.");
       mqttClient.subscribe("firmgit");
     } else {
-      Serial.print("Falha ao conectar ao MQTT, rc=");
-      Serial.println(mqttClient.state());
       delay(5000);
     }
   }
 }
 
-// Função de callback do MQTT para processar mensagens recebidas
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String message = String((char*)payload).substring(0, length);
   if (String(topic) == "firmgit") {
-    Serial.println("Recebido arquivo de firmware: " + message);
-    blinkLED(3, 500);  // Pisca o LED 3 vezes para confirmar o download
+    blinkLED(3, 500);
     downloadFirmware(message);
   }
 }
 
-// Pisca o LED um número específico de vezes
 void blinkLED(int times, int delayTime) {
   for (int i = 0; i < times; i++) {
     digitalWrite(ledPin, HIGH);
@@ -79,11 +58,8 @@ void blinkLED(int times, int delayTime) {
   }
 }
 
-// Baixa e aplica o firmware via OTA
 void downloadFirmware(const String& filename) {
   String firmwareUrl = firmware_base_url + filename;
-  Serial.println("URL do firmware: " + firmwareUrl);
-
   WiFiClientSecure client;
   client.setInsecure();
   HTTPClient http;
@@ -95,17 +71,10 @@ void downloadFirmware(const String& filename) {
     if (contentLength > 0 && Update.begin(contentLength)) {
       size_t written = Update.writeStream(*http.getStreamPtr());
       if (written == contentLength && Update.end() && Update.isFinished()) {
-        Serial.println("Atualização de firmware concluída com sucesso!");
-        blinkLED(1, 3000);  // Pisca o LED 1 vez por 3 segundos antes de reiniciar
+        blinkLED(1, 3000);
         ESP.restart();
-      } else {
-        Serial.printf("Erro: %s\n", Update.errorString());
       }
-    } else {
-      Serial.println("Espaço insuficiente para iniciar OTA");
     }
-  } else {
-    Serial.printf("Falha na requisição HTTP com código: %d\n", httpCode);
   }
   http.end();
 }
