@@ -19,66 +19,25 @@ PubSubClient mqttClient(espClient);
 
 const char* firmware_base_url = "https://raw.githubusercontent.com/PedroKutski/TESTES/main/";
 
-static const char* root_ca PROGMEM = R"EOF(
------BEGIN CERTIFICATE-----
-MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
-TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
-cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
-WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
-ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
-MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
-h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
-0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
-A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
-T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
-B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
-B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
-KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
-OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
-jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
-qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
-rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
-HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
-hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
-ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
-3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
-NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
-ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
-TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
-jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
-oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
-4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
-mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
-emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
------END CERTIFICATE-----
-)EOF";
-
-// Declaração das funções
-void mqttCallback(char* topic, byte* payload, unsigned int length);
-void reconnectToMQTT();
-void downloadFirmware(const String& filename);
+const int ledPin = 2;  // Pin do LED
 
 void setup() {
-  Serial.begin(9600);     // Inicializa a comunicação serial
-
-  connectToWiFi();  // Conecta ao WiFi
-  espClient.setInsecure();  // Ignora validação do certificado SSL
-  mqttClient.setServer(mqtt_server, mqtt_port);  // Configura o servidor MQTT
-  mqttClient.setCallback(mqttCallback);          // Define a função de callback do MQTT
+  Serial.begin(9600);
+  pinMode(ledPin, OUTPUT);  // Configura o pin do LED como saída
+  connectToWiFi();
+  espClient.setInsecure();
+  mqttClient.setServer(mqtt_server, mqtt_port);
+  mqttClient.setCallback(mqttCallback);
 }
 
 void loop() {
-  if (!mqttClient.connected()) {
-    reconnectToMQTT();  // Reconnecta ao MQTT se estiver desconectado
-  }
-  mqttClient.loop();  // Processa mensagens MQTT recebidas
+  if (!mqttClient.connected()) reconnectToMQTT();
+  mqttClient.loop();
 }
 
 // Conecta ao WiFi
 void connectToWiFi() {
-  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -89,30 +48,34 @@ void connectToWiFi() {
 // Reconnecta ao broker MQTT se necessário
 void reconnectToMQTT() {
   while (!mqttClient.connected()) {
-    String clientId = "ESP32Client-" + String(random(0xffff), HEX);
-    if (mqttClient.connect(clientId.c_str(), mqtt_username, mqtt_password)) {
+    if (mqttClient.connect("ESP32Client", mqtt_username, mqtt_password)) {
       Serial.println("Conectado ao broker MQTT.");
-      mqttClient.subscribe("firmgit");  // Inscreve-se no novo tópico
+      mqttClient.subscribe("firmgit");
     } else {
       Serial.print("Falha ao conectar ao MQTT, rc=");
       Serial.println(mqttClient.state());
-      delay(5000);  // Aguarda 5 segundos antes de tentar novamente
+      delay(5000);
     }
   }
 }
 
 // Função de callback do MQTT para processar mensagens recebidas
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  String message;
-  for (int i = 0; i < length; i++) {
-    message += (char)payload[i];  // Converte o payload em string
-  }
-  message.trim();  // Remove espaços extras
-
+  String message = String((char*)payload).substring(0, length);
   if (String(topic) == "firmgit") {
-    // Assumimos que a mensagem é o nome do arquivo de firmware
     Serial.println("Recebido arquivo de firmware: " + message);
-    downloadFirmware(message);  // Inicia o download do firmware
+    blinkLED(3, 500);  // Pisca o LED 3 vezes para confirmar o download
+    downloadFirmware(message);
+  }
+}
+
+// Pisca o LED um número específico de vezes
+void blinkLED(int times, int delayTime) {
+  for (int i = 0; i < times; i++) {
+    digitalWrite(ledPin, HIGH);
+    delay(delayTime);
+    digitalWrite(ledPin, LOW);
+    delay(delayTime);
   }
 }
 
@@ -122,40 +85,27 @@ void downloadFirmware(const String& filename) {
   Serial.println("URL do firmware: " + firmwareUrl);
 
   WiFiClientSecure client;
-  client.setInsecure();  // Ignora verificação SSL
-
+  client.setInsecure();
   HTTPClient http;
-  http.begin(client, firmwareUrl);  // Inicia a conexão HTTP
-  int httpCode = http.GET();  // Envia a requisição GET
+  http.begin(client, firmwareUrl);
+  int httpCode = http.GET();
 
   if (httpCode == HTTP_CODE_OK) {
     int contentLength = http.getSize();
-    if (contentLength > 0) {
-      if (Update.begin(contentLength)) {
-        WiFiClient* stream = http.getStreamPtr();
-        size_t written = 0;
-
-        // Baixa o firmware
-        while (written < contentLength) {
-          written += Update.writeStream(*stream);
-          delay(1);  // Permite que o download ocorra suavemente
-        }
-
-        // Finaliza a atualização e reinicia o ESP32
-        if (written == contentLength && Update.end() && Update.isFinished()) {
-          Serial.println("Atualização de firmware concluída com sucesso!");
-          ESP.restart();  // Reinicia o ESP32
-        } else {
-          Serial.printf("Erro: %s\n", Update.errorString());
-        }
+    if (contentLength > 0 && Update.begin(contentLength)) {
+      size_t written = Update.writeStream(*http.getStreamPtr());
+      if (written == contentLength && Update.end() && Update.isFinished()) {
+        Serial.println("Atualização de firmware concluída com sucesso!");
+        blinkLED(1, 3000);  // Pisca o LED 1 vez por 3 segundos antes de reiniciar
+        ESP.restart();
       } else {
-        Serial.println("Espaço insuficiente para iniciar OTA");
+        Serial.printf("Erro: %s\n", Update.errorString());
       }
     } else {
-      Serial.println("Conteúdo inválido recebido.");
+      Serial.println("Espaço insuficiente para iniciar OTA");
     }
   } else {
     Serial.printf("Falha na requisição HTTP com código: %d\n", httpCode);
   }
-  http.end();  // Fecha a conexão HTTP
+  http.end();
 }
