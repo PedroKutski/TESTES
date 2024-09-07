@@ -1,3 +1,4 @@
+
 #include <WiFi.h> // Biblioteca para conectar ao WiFi
 #include <PubSubClient.h> // Biblioteca para comunicação MQTT
 #include <WiFiClientSecure.h> // Biblioteca para comunicação segura via WiFi
@@ -47,8 +48,8 @@ void loop() {
 
 void reconnectToMQTT() {
   while (!mqttClient.connected()) {
-    if (mqttClient.connect("ESP32Client", mqtt_username, mqtt_password)) {
-      mqttClient.subscribe("firmgit"); // Inscreve no tópico "firmgit"
+    if (mqttClient.connect("ESP32Client_teste", mqtt_username, mqtt_password)) {
+      mqttClient.subscribe("firmware_git"); // Inscreve no tópico "firmware_git"
     } else {
       delay(5000); // Espera 5 segundos antes de tentar novamente
     }
@@ -57,8 +58,8 @@ void reconnectToMQTT() {
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String message = String((char*)payload).substring(0, length); // Converte o payload para string
-  if (String(topic) == "firmgit") {
-    blinkLED(3, 190); // Pisca o LED 3 vezes
+  if (String(topic) == "firmware_git") {
+    blinkLED(2, 100); // Pisca o LED 2 vezes
     downloadFirmware(message); // Faz o download do firmware
   }
 }
@@ -83,9 +84,23 @@ void downloadFirmware(const String& filename) {
   if (httpCode == HTTP_CODE_OK) {
     int contentLength = http.getSize(); // Obtém o tamanho do conteúdo
     if (contentLength > 0 && Update.begin(contentLength)) {
-      size_t written = Update.writeStream(*http.getStreamPtr()); // Escreve o firmware na memória
+      size_t written = 0;
+      WiFiClient* stream = http.getStreamPtr();
+      uint8_t buff[128] = { 0 };
+      unsigned long lastBlink = millis();
+      while (http.connected() && (written < contentLength)) {
+        size_t size = stream->available();
+        if (size) {
+          int c = stream->readBytes(buff, ((size > sizeof(buff)) ? sizeof(buff) : size));
+          written += Update.write(buff, c);
+        }
+        if (millis() - lastBlink > 500) { // Pisca o LED a cada 500ms
+          digitalWrite(ledPin, !digitalRead(ledPin));
+          lastBlink = millis();
+        }
+      }
       if (written == contentLength && Update.end() && Update.isFinished()) {
-        blinkLED(4, 190); // Pisca o LED 5 vezes
+        blinkLED(5, 150); // Pisca o LED 5 vezes
         ESP.restart(); // Reinicia o ESP
       }
     }
