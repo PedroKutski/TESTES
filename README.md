@@ -1,0 +1,1 @@
+Este repositório, visa trazer uma pequena demonstração do uso do ESP32 com OTA e MQTT. Funciona com base em topicos enviados pelo payload de aplicativo dizendo qual firmware instalar da nuvem (GitHub)
